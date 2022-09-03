@@ -1,8 +1,23 @@
 import type { NextPage } from 'next';
 import Head from 'next/head';
-import Image from 'next/image';
-
+import React from 'react';
+// Basic Authentication
 const Home: NextPage = () => {
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState(''); //React.useReducer(initialState,reducer)
+
+  const onSubmitHandler = () => {
+    fetch('/api/login', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${Buffer.from(`${email}:${password}`).toString(
+          'base64'
+        )}`,
+      },
+    }).then((res) => res.json().then((data) => {}));
+  };
+
   return (
     <div>
       <Head>
@@ -12,7 +27,28 @@ const Home: NextPage = () => {
       </Head>
 
       <main>
-        <h1 className='text-red-400'>Hello Next JS</h1>
+        <div className='flex flex-col gap-2 p-2'>
+          <h1>Login User</h1>
+          <input
+            type='email'
+            className='border border-gray-400 p-2 w-1/2'
+            placeholder='Input your Email Address'
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <input
+            type='password'
+            className='border border-gray-400 p-2 w-1/2'
+            placeholder='Input your Password'
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button
+            className='bg-blue-600 w-1/2 p-2 rounded-sm text-white cursor-pointer'
+            onClick={onSubmitHandler}>
+            Login
+          </button>
+        </div>
       </main>
     </div>
   );
