@@ -1,4 +1,5 @@
 import { NextApiHandler } from 'next';
+import jwt from 'jsonwebtoken';
 import users from 'users.json';
 
 const handler: NextApiHandler = (req, res) => {
@@ -21,18 +22,31 @@ const handler: NextApiHandler = (req, res) => {
 
   const decodedToken = Buffer.from(encodedToken, 'base64').toString('utf-8');
   const [email, password] = decodedToken.split(':');
+  const user = users[email as keyof typeof users];
 
-  if (!users[email as keyof typeof users])
+  if (!user)
     return res
       .status(401)
       .json({ loggedIn: false, error: 'User is not registered with the App' });
 
-  if (password !== users[email as keyof typeof users])
+  if (password !== user.password)
     return res
       .status(401)
       .json({ loggedIn: false, error: 'Password is incorrect' });
 
-  return res.status(200).json({ email, password, loggedIn: true }); // {email:email,password:password}
+  // JWT Implementation
+  // User Email, User Role, expiration Time
+  const tokenValidationTime = 300;
+  const expiresIn = new Date().getTime() + 1000 * tokenValidationTime;
+
+  const encryptedToken = jwt.sign(
+    { email, role: user.role, expiresIn },
+    process.env.JWT_SECRET_KEY ?? 'SOME_RANDOM_KEY'
+  );
+
+  return res
+    .status(200)
+    .json({ token: encryptedToken, type: 'Bearer', loggedIn: true }); // {email:email,password:password}
 };
 
 export default handler;

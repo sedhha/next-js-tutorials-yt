@@ -2,9 +2,13 @@ import type { NextPage } from 'next';
 import Head from 'next/head';
 import React from 'react';
 // Basic Authentication
+/*
+    Basic Auth -> JWT it has expiry
+*/
 const Home: NextPage = () => {
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState(''); //React.useReducer(initialState,reducer)
+  const [sensetiveData, setSensetiveData] = React.useState('');
 
   const onSubmitHandler = () => {
     fetch('/api/login', {
@@ -15,7 +19,32 @@ const Home: NextPage = () => {
           'base64'
         )}`,
       },
-    }).then((res) => res.json().then((data) => {}));
+    })
+      .then((res) =>
+        res.json().then((data) => {
+          console.log('Stored ', data.token);
+          localStorage.setItem('idToken', data.token);
+        })
+      )
+      .catch((error) => {
+        console.log('Error = ', error.message);
+        setSensetiveData('');
+      });
+  };
+
+  const onGetDataHandler = () => {
+    fetch('/api/protected/user-details', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('idToken')}`,
+      },
+    }).then((res) =>
+      res.json().then((data) => {
+        if (data.loggedIn) setSensetiveData(data.data ?? '');
+        else console.log('Error = ', data);
+      })
+    );
   };
 
   return (
@@ -31,23 +60,29 @@ const Home: NextPage = () => {
           <h1>Login User</h1>
           <input
             type='email'
-            className='border border-gray-400 p-2 w-1/2'
+            className='w-1/2 p-2 border border-gray-400'
             placeholder='Input your Email Address'
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
           <input
             type='password'
-            className='border border-gray-400 p-2 w-1/2'
+            className='w-1/2 p-2 border border-gray-400'
             placeholder='Input your Password'
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
           <button
-            className='bg-blue-600 w-1/2 p-2 rounded-sm text-white cursor-pointer'
+            className='w-1/2 p-2 text-white bg-blue-600 rounded-sm cursor-pointer'
             onClick={onSubmitHandler}>
             Login
           </button>
+          <button
+            className='w-1/2 p-2 text-white bg-blue-600 rounded-sm cursor-pointer'
+            onClick={onGetDataHandler}>
+            Get Protected Data
+          </button>
+          {sensetiveData !== '' && <p>Sensetive Data: {sensetiveData}</p>}
         </div>
       </main>
     </div>
